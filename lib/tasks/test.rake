@@ -1,8 +1,8 @@
 # frozen_string_literal: true
 
 namespace :test do
-  desc "Reproduce problem with deadlock"
-  task reproduce_error: :environment do
+  desc "Reproduce problem with deadlock, while autoloading constants"
+  task finish_him: :environment do
     require "open3"
 
     Thread.report_on_exception = false
@@ -14,7 +14,7 @@ namespace :test do
       loop do
         threads = %w[first second].map(&make_request)
         FileUtils.touch(Rails.root.join("app", "services", "first_module.rb"))
-        sleep 1
+        sleep 0.5
         threads.map(&:kill)
         p "Requested..."
 
@@ -29,17 +29,18 @@ namespace :test do
     end
   end
 
-  desc "Crash Ruby"
-  task dump_core: :environment do
+  desc "Oh my, segmentation fault may appear here or maybe not"
+  task try_segmentation_fault: :environment do
     loop do
       p "Trying..."
       Rails.application.reloader.reload!
 
+      # Sleep forever
       Thread.new { FirstModule }
       Thread.new { SecondModule }
       Thread.new { ThirdModule }
 
-      SecondModule # Hangs here forever
+      SecondModule # When we access this constant, script stuck or crash with segmentation fault
     end
   end
 end
