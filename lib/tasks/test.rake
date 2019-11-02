@@ -1,10 +1,11 @@
 # frozen_string_literal: true
 
 namespace :test do
-  desc "Reproduce problem with deadlock, while autoloading constants"
-  task finish_him: :environment do
+  desc "Reproduces an error when an application gets into a deadlock during autoloading"
+  task :finish_him, %i[autoload_mode] => :environment do |_, args|
     require "open3"
 
+    ENV["AUTOLOAD_MODE"] = args[:autoload_mode] || "zeitwerk"
     Thread.report_on_exception = false
     make_request = proc { |action| Thread.new { HTTP.get("http://localhost:3000/#{action}") } }
 
@@ -25,13 +26,12 @@ namespace :test do
       end
 
       Process.kill("KILL", wait_thr.pid)
-      wait_thr.join
     end
   end
 
-  desc "Oh my, segmentation fault may appear here or maybe not"
-  task try_segmentation_fault: :environment do
-    loop do
+  desc "Access to three constants from different threads, which causes script execution to freeze"
+  task access_in_threads: :environment do
+    200.times do
       p "Trying..."
       Rails.application.reloader.reload!
 
