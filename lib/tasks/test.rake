@@ -10,6 +10,16 @@ namespace :test do
     make_request = proc { |action| Thread.new { HTTP.get("http://localhost:3000/#{action}") } }
 
     Open3.popen2("rails s", chdir: Rails.root) do |_stdin, stdout, wait_thr|
+      Signal.trap("INT") do
+        print "Exiting...\n"
+
+        Thread.list
+          .then { |threads| threads.select { |thr| thr.status == "run" } }
+          .then { |threads| threads - [Thread.current] }
+          .each(&:join)
+        Process.kill("KILL", wait_thr.pid)
+        exit
+      end
       stdout.each_line { |line| break if line.match?(/use ctrl\-c/i) }
 
       loop do
@@ -17,7 +27,7 @@ namespace :test do
         FileUtils.touch(Rails.root.join("app", "services", "first_module.rb"))
         sleep 0.5
         threads.map(&:kill)
-        p "Requested..."
+        print "Requested...\n"
 
         if (debug_body = HTTP.get("http://localhost:3000/rails/locks").body).present?
           print debug_body
