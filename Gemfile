@@ -7,7 +7,7 @@ ruby File.read(".ruby-version").strip
 
 gem "bootsnap", ">= 1.4.2", require: false
 gem "http"
-gem "puma", "~> 4.3.0"
+gem "puma", "~> 4.3.9"
 gem "rails", "~> 6.0.0"
 
 group :development, :test do
